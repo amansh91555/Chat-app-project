@@ -7,13 +7,15 @@ import toast from 'react-hot-toast'
 
 const ChatContainer = () => {
 
-     const { messages , selectedUser, setSelectedUser , sendMessages, getMessages } = useContext(ChatContext)
+     const { messages , selectedUser, setSelectedUser , sendMessages, getMessages, generateAiResponse } = useContext(ChatContext)
      const { authUser , onlineUsers } = useContext(AuthContext)
 
 
      const scrollEnd = useRef()
 
      const [input, setInput] = useState('');
+     const [aiResult, setAiResult] = useState('');
+     const [aiLoading, setAiLoading] = useState(false);
 
      //handle sending A message 
      const handleSendMessage = async (e)=>{
@@ -41,6 +43,24 @@ const ChatContainer = () => {
 
           reader.readAsDataURL(file);
 
+     }
+
+     const handleAiAction = async (task)=>{
+        if(aiLoading) return;
+        setAiLoading(true);
+        const data = await generateAiResponse({
+            task,
+            draft: input,
+            targetLanguage: "Hindi"
+        });
+        setAiLoading(false);
+
+        if(data?.result){
+            setAiResult(data.result);
+            if(task === "rewrite" || task === "translate"){
+                setInput(data.result);
+            }
+        }
      }
 
      useEffect(()=>{
@@ -79,7 +99,7 @@ const ChatContainer = () => {
 
                {/* --------------chat area --------------------- */}
 
-   <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 
+   <div className='flex flex-col h-[calc(100%-190px)] overflow-y-scroll p-3 
    pb-6'>
     {messages.map((msg, index)=>(
         <div key={index} className={`flex items-end gap-2 justify-end ${msg.
@@ -110,7 +130,31 @@ const ChatContainer = () => {
 
             {/*-------------bottom area -------------------------------- */}
 
-    <div className='absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3'>
+    <div className='absolute bottom-0 left-0 right-0 p-3'>
+        {aiResult && (
+            <div className='mb-2 rounded-lg border border-violet-400/30 bg-[#1f1838]/95 p-3 text-xs text-gray-100 shadow-lg'>
+                <div className='mb-2 flex items-center justify-between gap-2'>
+                    <span className='font-semibold text-violet-200'>AI Assistant</span>
+                    <button onClick={()=>setAiResult('')} className='text-gray-300 hover:text-white'>Clear</button>
+                </div>
+                <p className='whitespace-pre-wrap leading-5'>{aiResult}</p>
+            </div>
+        )}
+        <div className='mb-2 flex flex-wrap gap-2 text-xs'>
+            <button onClick={()=>handleAiAction("smart-reply")} disabled={aiLoading} className='rounded-full bg-violet-500/25 px-3 py-1.5 text-violet-100 hover:bg-violet-500/40 disabled:opacity-60'>
+                Smart reply
+            </button>
+            <button onClick={()=>handleAiAction("summarize")} disabled={aiLoading} className='rounded-full bg-cyan-500/20 px-3 py-1.5 text-cyan-100 hover:bg-cyan-500/35 disabled:opacity-60'>
+                Summarize
+            </button>
+            <button onClick={()=>handleAiAction("rewrite")} disabled={aiLoading || !input.trim()} className='rounded-full bg-emerald-500/20 px-3 py-1.5 text-emerald-100 hover:bg-emerald-500/35 disabled:opacity-60'>
+                Rewrite
+            </button>
+            <button onClick={()=>handleAiAction("translate")} disabled={aiLoading || !input.trim()} className='rounded-full bg-amber-500/20 px-3 py-1.5 text-amber-100 hover:bg-amber-500/35 disabled:opacity-60'>
+                Hindi
+            </button>
+        </div>
+    <div className='flex items-center gap-3'>
         <div className='flex-1 flex items-center bg-gray-100/12 px-3 rounded-full'>
             <input onChange = {(e)=> setInput(e.target.value)} value={input} 
                    onKeyDown={(e)=> e.key === "Enter" ? handleSendMessage(e) :null}
@@ -125,6 +169,7 @@ const ChatContainer = () => {
         </div>
 
         <img onClick={handleSendMessage} src={assets.send_button} alt="" className="w-7 cursor-pointer"/>
+    </div>
     </div>
 
 

@@ -57,6 +57,28 @@ export const ChatProvider = ({children}) =>{
         }
     }
 
+    //function to generate AI assistance for selected chat
+    const generateAiResponse = async ({task, draft, targetLanguage})=>{
+        try {
+            const { data } = await axios.post("/api/ai/chat", {
+                selectedUserId: selectedUser._id,
+                task,
+                draft,
+                targetLanguage
+            });
+
+            if(data.success){
+                return data;
+            }
+
+            toast.error(data.message);
+            return null;
+        } catch (error) {
+             toast.error(error.message);
+             return null;
+        }
+    }
+
 
     //function to subscribe to messages for selected user
     const subscribeToMessages = async ()=>{
@@ -95,7 +117,7 @@ export const ChatProvider = ({children}) =>{
 
     const value = {
             messages, users, selectedUser, getUsers, getMessages, sendMessages,
-            setSelectedUser, unseenMessages, setUnseenMessages
+            setSelectedUser, unseenMessages, setUnseenMessages, generateAiResponse
     }
     return (
         <ChatContext.Provider value={value}>
